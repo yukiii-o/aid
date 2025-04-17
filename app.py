@@ -402,7 +402,7 @@ def tokenize(text):
 
 # Create a vocabulary from the dataset
 vocab = set()
-for text in texts:
+for text in text:
     tokens = tokenize(preprocess(text))
     vocab.update(tokens)
 
