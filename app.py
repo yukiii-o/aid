@@ -387,7 +387,7 @@ if st.button("SCAN") and user_input.strip():
 ]
 
 # Separate text and labels
-texts, labels = zip(data)
+    texts, labels = zip(*data)
 
 # Step 2: Preprocess the Text
 def preprocess(text):
