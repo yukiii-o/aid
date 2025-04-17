@@ -386,7 +386,7 @@ if st.button("SCAN") and user_input.strip():
 ("She spent the evening reading by candlelight.", 0),
 ]
 
-   # Separate text and labels
+# Separate text and labels
 texts, labels = zip(*data)
 
 # Step 2: Preprocess the Text
