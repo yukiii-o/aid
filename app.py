@@ -386,139 +386,106 @@ if st.button("SCAN") and user_input.strip():
 ("She spent the evening reading by candlelight.", 0),
 ]
 
-# Separate text and labels
-    texts, labels = zip(*data)
+  texts, labels = zip(*data)
 
-# Step 2: Preprocess the Text
-def preprocess(text):
-    # Convert to lowercase and remove non-alphabetic characters
-    text = text.lower()
-    text = "".join(char for char in text if char.isalpha() or char.isspace())
-    return text
+    def preprocess(text):
+        text = text.lower()
+        text = "".join(char for char in text if char.isalpha() or char.isspace())
+        return text
 
-# Tokenize the text into words
-def tokenize(text):
-    return text.split()
+    def tokenize(text):
+        return text.split()
 
-# Create a vocabulary from the dataset
-vocab = set()
-for text in text:
-    tokens = tokenize(preprocess(text))
-    vocab.update(tokens)
+    vocab = set()
+    for text in texts:
+        tokens = tokenize(preprocess(text))
+        vocab.update(tokens)
 
-# Convert the vocabulary to a list of words
-vocab = list(vocab)
+    vocab = list(vocab)
 
-# Step 3: Convert Text to Numerical Features (Bag-of-Words)
-def text_to_vector(text):
-    vector = [0] * len(vocab)
-    tokens = tokenize(preprocess(text))
-    for token in tokens:
-        if token in vocab:
-            vector[vocab.index(token)] += 1
-    return vector
+    def text_to_vector(text):
+        vector = [0] * len(vocab)
+        tokens = tokenize(preprocess(text))
+        for token in tokens:
+            if token in vocab:
+                vector[vocab.index(token)] += 1
+        return vector
 
-# Convert all texts to feature vectors
-X = [text_to_vector(text) for text in texts]
-y = list(labels)
+    X = [text_to_vector(text) for text in texts]
+    y = list(labels)
 
-# Step 4: Split the Data into Training and Testing Sets
-def train_test_split(X, y, test_size=0.25):
-    split_index = int(len(X) * (1 - test_size))
-    X_train, X_test = X[:split_index], X[split_index:]
-    y_train, y_test = y[:split_index], y[split_index:]
-    return X_train, X_test, y_train, y_test
+    def train_test_split(X, y, test_size=0.25):
+        split_index = int(len(X) * (1 - test_size))
+        X_train, X_test = X[:split_index], X[split_index:]
+        y_train, y_test = y[:split_index], y[split_index:]
+        return X_train, X_test, y_train, y_test
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 
-# Step 5: Implement a Naive Bayes Classifier
-class NaiveBayesClassifier:
-    def __init__(self):
-        self.class_probs = {}
-        self.feature_probs = {}
+    class NaiveBayesClassifier:
+        def __init__(self):
+            self.class_probs = {}
+            self.feature_probs = {}
 
-    def fit(self, X, y):
-        n_samples = len(X)
-        n_features = len(X[0])
-        classes = set(y)
+        def fit(self, X, y):
+            n_samples = len(X)
+            n_features = len(X[0])
+            classes = set(y)
 
-        # Calculate class probabilities
-        for c in classes:
-            self.class_probs[c] = sum(1 for label in y if label == c) / n_samples
+            for c in classes:
+                self.class_probs[c] = sum(1 for label in y if label == c) / n_samples
+                self.feature_probs[c] = [0] * n_features
+                class_samples = [X[i] for i in range(n_samples) if y[i] == c]
+                for feature_index in range(n_features):
+                    feature_count = sum(sample[feature_index] for sample in class_samples)
+                    self.feature_probs[c][feature_index] = (feature_count + 1) / (len(class_samples) + n_features)
 
-        # Calculate feature probabilities
-        for c in classes:
-            self.feature_probs[c] = [0] * n_features
-            class_samples = [X[i] for i in range(n_samples) if y[i] == c]
-            for feature_index in range(n_features):
-                feature_count = sum(sample[feature_index] for sample in class_samples)
-                self.feature_probs[c][feature_index] = (feature_count + 1) / (len(class_samples) + n_features)
+        def predict(self, X):
+            predictions = []
+            for sample in X:
+                max_prob = -math.inf
+                best_class = -1
+                for c in self.class_probs:
+                    prob = math.log(self.class_probs[c])
+                    for feature_index in range(len(sample)):
+                        if sample[feature_index] > 0:
+                            prob += math.log(self.feature_probs[c][feature_index])
+                    if prob > max_prob:
+                        max_prob = prob
+                        best_class = c
+                predictions.append(best_class)
+            return predictions
 
-    def predict(self, X):
-        predictions = []
-        for sample in X:
-            max_prob = -1
-            best_class = -1
-            for c in self.class_probs:
-                prob = self.class_probs[c]
-                for feature_index in range(len(sample)):
-                    if sample[feature_index] > 0:
-                        prob *= self.feature_probs[c][feature_index]
-                if prob > max_prob:
-                    max_prob = prob
-                    best_class = c
-            predictions.append(best_class)
-        return predictions
-    
-    def predict_proba(self, X):
-        probabilities = []
-        for sample in X:
-            class_probs = {}
-            total_prob = 0
-            for c in self.class_probs:
-                prob = self.class_probs[c]
-                for feature_index in range(len(sample)):
-                    if sample[feature_index] > 0:
-                        prob *= self.feature_probs[c][feature_index]
-                class_probs[c] = prob
-                total_prob += prob
-            
-            # Normalize probabilities
-            for c in class_probs:
-                class_probs[c] = class_probs[c] / total_prob
-            probabilities.append(class_probs)
-        return probabilities
+        def predict_proba(self, X):
+            probabilities = []
+            for sample in X:
+                class_probs = {}
+                total_prob = 0
+                for c in self.class_probs:
+                    prob = self.class_probs[c]
+                    for feature_index in range(len(sample)):
+                        if sample[feature_index] > 0:
+                            prob *= self.feature_probs[c][feature_index]
+                    class_probs[c] = prob
+                    total_prob += prob
 
-# Train 
-classifier = NaiveBayesClassifier()
-classifier.fit(X_train, y_train)
+                for c in class_probs:
+                    class_probs[c] = class_probs[c] / total_prob
+                probabilities.append(class_probs)
+            return probabilities
 
-# Step 6: model eval
-y_pred = classifier.predict(X_test)
+    classifier = NaiveBayesClassifier()
+    classifier.fit(X_train, y_train)
 
-# Calculate accuracy
-accuracy = sum(1 for i in range(len(y_test)) if y_test[i] == y_pred[i]) / len(y_test)
-print(f"Accuracy: {accuracy * 100:.2f}%")
+    def detect_ai_text(text):
+        vector = text_to_vector(text)
+        prediction = classifier.predict([vector])[0]
+        proba = classifier.predict_proba([vector])[0]
+        confidence = proba[prediction] * 100
+        return ("AI-generated" if prediction == 1 else "Human-written", confidence)
 
-# Step 7: predict
-def detect_ai_text(text):
-    vector = text_to_vector(text)
-    prediction = classifier.predict([vector])[0]
-    proba = classifier.predict_proba([vector])[0]
-    confidence = proba[prediction] * 100
-    return ("Human-written" if prediction == 1 else "AI-generated", confidence)
+    result, confidence = detect_ai_text(user_input)
 
-# Add user input functionality
-if __name__ == "__main__":
-    print("AI Text Detector")
-    print("Bla-bla type something here")
-    print("Type 'quit' to exit\n")
-    
-    while True:
-        user_input = input("Enter a sentence: ")
-        if user_input.lower() == 'quit':
-            break
-        result, confidence = detect_ai_text(user_input)
         print(f"Prediction: {result} (Confidence: {confidence:.2f}%)\n")
     
     print("Thank you for using our program :) ")
