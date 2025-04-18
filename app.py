@@ -15,6 +15,23 @@ if st.button("SCAN") and user_input.strip():
 
     import math
 
+import streamlit as st
+
+# Streamlit page setup
+st.set_page_config(page_title="AI Text Detector", page_icon="🤖", layout="centered")
+
+st.title("AIDENTIFY - AI Text Detector")
+st.markdown("Welcome! Paste a sentence or paragraph below and find out if it was **AI-generated** or **Human-written**.")
+
+# Large input area
+user_input = st.text_area("Input your text here:", height=200, placeholder="Type or paste your text...")
+
+# Detection logic triggers on button click
+if st.button("SCAN") and user_input.strip():
+    # ====== Begin original code block ======
+
+    import math
+
 # Dataset (need to modify to add more stuff here): 0 = human-written, 1 = AI-generated
 data = [
     #Human:
